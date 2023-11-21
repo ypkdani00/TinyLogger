@@ -1,9 +1,13 @@
 #pragma once
-#include <vector>
-#include "Arduino.h"
 
 #ifndef TINYLOGGER_NTPCLIENT
   #define TINYLOGGER_NTPCLIENT 0
+#endif
+
+#include <vector>
+#include <Arduino.h>
+#if TINYLOGGER_NTPCLIENT
+  #include <NTPClient.h>
 #endif
 
 class TinyLogger {
@@ -118,7 +122,7 @@ public:
     }
 
     if (this->dateTemplate != nullptr) {
-      tm* tm = nullptr;
+      struct tm* tm = nullptr;
       if (this->isDateSet()) {
         tm = this->date;
       }
@@ -131,9 +135,11 @@ public:
 #endif
 
       if (tm != nullptr) {
-        char dateBuf[64];
-        strftime(dateBuf, 64, this->dateTemplate, tm);
-        this->print(dateBuf);
+        char* buffer = new char[64];
+        if (strftime(buffer, sizeof(buffer), this->dateTemplate, tm) != 0) {
+          this->print(buffer);
+        }
+        delete[] buffer;
       }
     }
 
