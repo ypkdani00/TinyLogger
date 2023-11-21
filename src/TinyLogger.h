@@ -36,6 +36,10 @@ public:
     this->streams.clear();
   }
 
+  const std::vector<Stream*> getStreams() {
+    return this->streams;
+  }
+
   Level getLevel() {
     return this->level;
   }
