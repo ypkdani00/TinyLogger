@@ -1,11 +1,11 @@
 #pragma once
-
-#ifndef TINYLOGGER_NTPCLIENT
-  #define TINYLOGGER_NTPCLIENT 0
-#endif
-
 #include <vector>
 #include <Arduino.h>
+
+#ifndef TINYLOGGER_NTPCLIENT
+  #define TINYLOGGER_NTPCLIENT false
+#endif
+
 #if TINYLOGGER_NTPCLIENT
   #include <NTPClient.h>
 #endif
@@ -114,9 +114,24 @@ public:
     }
   }
 
+  template <typename... Args> void printf(const __FlashStringHelper* msg, Args... args) {
+    for (Stream* stream : this->streams) {
+      if (sizeof...(args) > 0) {
+        stream->printf_P(msg, args...);
+      } else {
+        stream->print(msg);
+      }
+    }
+  }
+
   template <class T, typename... Args> void printf(T msg, Args... args) {
     for (Stream* stream : this->streams) {
-      stream->printf(msg, args...);
+      if (sizeof...(args) > 0) {
+        stream->printf(msg, args...);
+        
+      } else {
+        stream->print(msg);
+      }
     }
   }
 
@@ -296,25 +311,25 @@ public:
     switch (level) {
       default:
       case Level::SILENT:
-        str = "SILENT";
+        str = PSTR("SILENT");
         break;
       case Level::FATAL:
-        str = "FATAL";
+        str = PSTR("FATAL");
         break;
       case Level::ERROR:
-        str = "ERROR";
+        str = PSTR("ERROR");
         break;
       case Level::WARNING:
-        str = "WARN";
+        str = PSTR("WARN");
         break;
       case Level::INFO:
-        str = "INFO";
+        str = PSTR("INFO");
         break;
       case Level::TRACE:
-        str = "TRACE";
+        str = PSTR("TRACE");
         break;
       case Level::VERBOSE:
-        str = "VERB";
+        str = PSTR("VERB");
         break;
     }
 
