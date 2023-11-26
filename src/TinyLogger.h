@@ -1,3 +1,6 @@
+#ifndef TINYLOGGER_H
+#define TINYLOGGER_H
+
 #pragma once
 #include <vector>
 #include <Arduino.h>
@@ -363,5 +366,4 @@ protected:
   const char* nlChar = "\r\n";
 };
 
-TinyLogger Log = TinyLogger();
-extern TinyLogger Log;
+#endif
