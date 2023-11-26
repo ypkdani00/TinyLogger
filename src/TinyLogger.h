@@ -117,7 +117,8 @@ public:
   template <typename... Args> void printf(const __FlashStringHelper* msg, Args... args) {
     for (Stream* stream : this->streams) {
       if (sizeof...(args) > 0) {
-        stream->printf_P(msg, args...);
+        stream->printf_P(reinterpret_cast<PGM_P>(msg), args...);
+
       } else {
         stream->print(msg);
       }
@@ -135,7 +136,34 @@ public:
     }
   }
 
-  template <class T, typename... Args> void printFormatted(Level level, const char* service, bool nl, T msg, Args... args) {
+  void printService(const char* service) {
+    if (service != nullptr && strlen(service) > 0) {
+      if (this->serviceDelim != nullptr && strlen(this->serviceDelim) > 0 && strstr(service, this->serviceDelim) != NULL) {
+        char* tmp = strdup(service);
+        char* item = strtok(tmp, this->serviceDelim);
+        
+        while (item != NULL) {
+          this->printf(this->serviceTemplate, item);
+          item = strtok(NULL, this->serviceDelim);
+        }
+        free(tmp);
+
+      } else {
+        this->printf(this->serviceTemplate, service);
+      }
+    }
+  }
+
+  void printService(const __FlashStringHelper* service) {
+    PGM_P pService = reinterpret_cast<PGM_P>(service);
+
+    char buffer[strlen_P(pService) + 1];
+    strcpy_P(buffer, pService);
+
+    return this->printService(buffer);
+  }
+
+  template <class ST, class MT, typename... Args> void printFormatted(Level level, ST service, bool nl, MT msg, Args... args) {
     if (level > this->level) {
       return;
     }
@@ -162,22 +190,7 @@ public:
       }
     }
 
-    if (service != nullptr && strlen(service) > 0) {
-      if (this->serviceDelim != nullptr && strlen(this->serviceDelim) > 0 && strstr(service, this->serviceDelim) != NULL) {
-        char* tmp = strdup(service);
-        char* item = strtok(tmp, this->serviceDelim);
-        
-        while (item != NULL) {
-          this->printf(this->serviceTemplate, item);
-          item = strtok(NULL, this->serviceDelim);
-        }
-        free(tmp);
-
-      } else {
-        this->printf(this->serviceTemplate, service);
-      }
-    }
-    
+    this->printService(service);    
     this->printf(this->levelTemplate, TinyLogger::level2str(level));
     this->print(" ");
     this->printf(msg, args...);
@@ -191,7 +204,7 @@ public:
     this->printFormatted(Level::FATAL, nullptr, false, msg, args...);
   }
 
-  template <class T, typename... Args> void sfatal(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void sfatal(ST service, MT msg, Args... args) {
     this->printFormatted(Level::FATAL, service, false, msg, args...);
   }
 
@@ -199,7 +212,7 @@ public:
     this->printFormatted(Level::FATAL, nullptr, true, msg, args...);
   }
 
-  template <class T, typename... Args> void sfatalln(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void sfatalln(ST service, MT msg, Args... args) {
     this->printFormatted(Level::FATAL, service, true, msg, args...);
   }
 
@@ -208,7 +221,7 @@ public:
     this->printFormatted(Level::ERROR, nullptr, false, msg, args...);
   }
 
-  template <class T, typename... Args> void serror(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void serror(ST service, MT msg, Args... args) {
     this->printFormatted(Level::ERROR, service, false, msg, args...);
   }
 
@@ -216,7 +229,7 @@ public:
     this->printFormatted(Level::ERROR, nullptr, true, msg, args...);
   }
 
-  template <class T, typename... Args> void serrorln(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void serrorln(ST service, MT msg, Args... args) {
     this->printFormatted(Level::ERROR, service, true, msg, args...);
   }
 
@@ -225,7 +238,7 @@ public:
     this->printFormatted(Level::WARNING, nullptr, false, msg, args...);
   }
 
-  template <class T, typename... Args> void swarning(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void swarning(ST service, MT msg, Args... args) {
     this->printFormatted(Level::WARNING, service, false, msg, args...);
   }
 
@@ -233,7 +246,7 @@ public:
     this->printFormatted(Level::WARNING, nullptr, true, msg, args...);
   }
 
-  template <class T, typename... Args> void swarningln(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void swarningln(ST service, MT msg, Args... args) {
     this->printFormatted(Level::WARNING, service, true, msg, args...);
   }
 
@@ -242,7 +255,7 @@ public:
     this->printFormatted(Level::INFO, nullptr, false, msg, args...);
   }
 
-  template <class T, typename... Args> void sinfo(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void sinfo(ST service, MT msg, Args... args) {
     this->printFormatted(Level::INFO, service, false, msg, args...);
   }
 
@@ -250,7 +263,7 @@ public:
     this->printFormatted(Level::INFO, nullptr, true, msg, args...);
   }
 
-  template <class T, typename... Args> void sinfoln(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void sinfoln(ST service, MT msg, Args... args) {
     this->printFormatted(Level::INFO, service, true, msg, args...);
   }
 
@@ -259,7 +272,7 @@ public:
     this->printFormatted(Level::NOTICE, nullptr, false, msg, args...);
   }
 
-  template <class T, typename... Args> void snotice(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void snotice(ST service, MT msg, Args... args) {
     this->printFormatted(Level::NOTICE, service, false, msg, args...);
   }
 
@@ -267,7 +280,7 @@ public:
     this->printFormatted(Level::NOTICE, nullptr, true, msg, args...);
   }
 
-  template <class T, typename... Args> void snoticeln(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void snoticeln(ST service, MT msg, Args... args) {
     this->printFormatted(Level::NOTICE, service, true, msg, args...);
   }
 
@@ -276,7 +289,7 @@ public:
     this->printFormatted(Level::TRACE, nullptr, false, msg, args...);
   }
 
-  template <class T, typename... Args> void strace(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void strace(ST service, MT msg, Args... args) {
     this->printFormatted(Level::TRACE, service, false, msg, args...);
   }
 
@@ -284,7 +297,7 @@ public:
     this->printFormatted(Level::TRACE, nullptr, true, msg, args...);
   }
 
-  template <class T, typename... Args> void straceln(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void straceln(ST service, MT msg, Args... args) {
     this->printFormatted(Level::TRACE, service, true, msg, args...);
   }
 
@@ -293,7 +306,7 @@ public:
     this->printFormatted(Level::VERBOSE, nullptr, false, msg, args...);
   }
 
-  template <class T, typename... Args> void sverbose(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void sverbose(ST service, MT msg, Args... args) {
     this->printFormatted(Level::VERBOSE, service, false, msg, args...);
   }
 
@@ -301,7 +314,7 @@ public:
     this->printFormatted(Level::VERBOSE, nullptr, true, msg, args...);
   }
 
-  template <class T, typename... Args> void sverboseln(const char* service, T msg, Args... args) {
+  template <class ST, class MT, typename... Args> void sverboseln(ST service, MT msg, Args... args) {
     this->printFormatted(Level::VERBOSE, service, true, msg, args...);
   }
 
